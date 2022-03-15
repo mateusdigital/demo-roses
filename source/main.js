@@ -118,7 +118,8 @@ function update_demo(dt)
     clear_canvas();
     
     G.tween.update(dt);
-    get_context().rotate(dt / 10)
+
+    get_context().rotate(dt / 10);
 }
 
 //------------------------------------------------------------------------------
@@ -144,7 +145,8 @@ function create_random_rose()
     const next_color = get_random_color();
     const easing     = random_element(C.EASINGS);
 
-    echo(value_start, value_target, is_animating_n, G.n, G.d);
+    // echo(value_start, value_target, is_animating_n, G.n, G.d);
+
     const ctx = get_context();
     G.tween = Tween.create(duration)
         .from({v: value_start })
@@ -171,7 +173,7 @@ function create_random_rose()
 
             const color     = chroma.mix(G.curr_color, next_color, G.tween.get_ratio());
             const thickness = map(Math.sin(G.tween.get_ratio() * MATH_2PI), -1, +1, 2, 10);
-            echo(thickness);
+            // echo(thickness);
             begin_draw();
 
             ctx.beginPath();
