@@ -21,6 +21,8 @@ __SOURCES = [
     "/modules/demolib/modules/external/chroma.js",
     "/modules/demolib/modules/external/dat.gui.js",
     "/modules/demolib/modules/external/perlin.js",
+
+    "/modules/demolib/source/tween.js",
     "/modules/demolib/source/demolib.js",
 ]
 
@@ -73,67 +75,122 @@ function setup_common(canvas)
     set_main_canvas       (canvas);
     install_input_handlers(canvas);
 
-    G.n = 1;
-    G.d = 1;
-    
-    G.curr_t  = 0;
-    G.total_t = 0;
+    set_canvas_line_width(1);
+    set_canvas_fill("black");
 
     translate_canvas_to_center();
-
-    set_canvas_fill("black");
     clear_canvas();
+   
+    //
+    // Constants
+    //
+    
+    C.EASINGS = [
+        Tween.Easing.Elastic.InOut,
+        Tween.Easing.Back   .InOut,
+        Tween.Easing.Bounce .InOut,
+    ];
+    
+    C.ROSE_DURATION = make_min_max(10, 20);
+    C.TARGET_VALUE  = make_min_max( 1,  8);
+    C.ANGLE_INCR    = 0.001;
 
+    //
+    // Globals
+    //
+
+    G.n          = 3;
+    G.d          = 2;
+    G.curr_color = get_random_color();
+
+    G.effects = [
+        create_random_rose, 
+    ]
+
+    create_random_rose();    
     start_draw_loop(update_demo);
 }
 
 //------------------------------------------------------------------------------
 function update_demo(dt)
 {
+    set_canvas_fill("black");
+    clear_canvas();
+    
+    G.tween.update(dt);
+    get_context().rotate(dt / 10)
+}
+
+//------------------------------------------------------------------------------
+function get_random_color() 
+{
+    const hue = random_int(0, 360);
+    return chroma.hsl(hue, 1, 0.5);
+}
+
+//------------------------------------------------------------------------------
+function create_random_rose()
+{
+    const duration       = C.ROSE_DURATION.random_float();
+    const is_animating_n = random_bool();
+    
+    const value_start  = (is_animating_n) ? G.n : G.d;
+    const value_target = C.TARGET_VALUE.random_int();
+
     const canvas_w   = get_canvas_width ();
     const canvas_h   = get_canvas_height(); 
-    const shape_size = Math.min(canvas_w, canvas_h) / 2;
-
-    begin_draw();
-
-    G.curr_t += dt;
-    if(G.curr_t >= G.total_t) { 
-        G.curr_t  = 0;
-        G.total_t = random_int(4, 10);
-        
-        G.n = (G.n + 1) % 10;
-        G.d = 2;
-        G.k = (G.n / G.d);
-        
-        G.x = null;
-        G.y = null;
-
-        G.total_angle = (MATH_2PI * G.d);
-        if(G.k == Math.trunc(G.k)) { 
-            G.total_angle = MATH_2PI * (G.d / 2);
-        }
-
-        set_canvas_fill("black");
-        clear_canvas();
-   
-        console.log(G);
-    }
-
-    const t = (G.curr_t / G.total_t);
+    const shape_size = (Math.min(canvas_w, canvas_h) * 0.8 / 2);
     
-    const theta = lerp(t, 0, G.total_angle);
-    const x     = shape_size * Math.cos(G.k * theta) * Math.cos(theta);
-    const y     = shape_size * Math.cos(G.k * theta) * Math.sin(theta);
-    
-    const c = chroma.hsl(t * 360, 0.5, 0.5);
-    set_canvas_stroke(c);
-    set_canvas_line_width(1);
-    if(G.x == null) { 
-        G.x = x;
-        G.y = y;
-    } else { 
-        draw_line(G.x, G.y, x, y); 
-        G.x = x;
-        G.y = y;
-    }
+    const next_color = get_random_color();
+    const easing     = random_element(C.EASINGS);
+
+    echo(value_start, value_target, is_animating_n, G.n, G.d);
+    const ctx = get_context();
+    G.tween = Tween.create(duration)
+        .from({v: value_start })
+        .to  ({v: value_target})
+        .easing(easing)
+        .on_complete(()=> { 
+            G.curr_color = next_color;
+
+            if(is_animating_n) { 
+                G.n = value_target;
+            } else { 
+                G.d = value_target;
+            }
+
+            const next_effect = random_element(G.effects);
+            next_effect();
+        })
+        .on_update((dt, v)=> { 
+            const n = (is_animating_n) ? v.v : G.n;
+            const d = (is_animating_n) ? G.d : v.v;
+            const k = (n / d);
+            
+            const max_angle = (MATH_2PI / k) * n; 
+
+            const color     = chroma.mix(G.curr_color, next_color, G.tween.get_ratio());
+            const thickness = map(Math.sin(G.tween.get_ratio() * MATH_2PI), -1, +1, 2, 10);
+            echo(thickness);
+            begin_draw();
+
+            ctx.beginPath();
+            for(let theta = 0; theta < max_angle; theta += C.ANGLE_INCR) {
+                const x = shape_size * Math.cos(k * theta) * Math.cos(theta);
+                const y = shape_size * Math.cos(k * theta) * Math.sin(theta);
+               
+                if(theta == 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            
+            set_canvas_stroke    (color);
+            set_canvas_line_width(thickness);
+
+            ctx.stroke();
+            end_draw();
+        })
+        .start();
 }
