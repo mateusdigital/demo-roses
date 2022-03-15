@@ -72,19 +72,17 @@ function setup_common(canvas)
 
     set_main_canvas       (canvas);
     install_input_handlers(canvas);
+
+    G.n = 1;
+    G.d = 1;
     
-    G.a = 100;
-    G.n = 5;
-    G.d = 3;
-    G.points_count = 100;
+    G.curr_t  = 0;
+    G.total_t = 0;
 
     translate_canvas_to_center();
-    
-    const gui = new dat.GUI();
-    gui.add(G, "points_count", 100, 1000)
-    gui.add(G, "n", 1, 20)
-    gui.add(G, "d", 1, 20)
 
+    set_canvas_fill("black");
+    clear_canvas();
 
     start_draw_loop(update_demo);
 }
@@ -92,40 +90,50 @@ function setup_common(canvas)
 //------------------------------------------------------------------------------
 function update_demo(dt)
 {
+    const canvas_w   = get_canvas_width ();
+    const canvas_h   = get_canvas_height(); 
+    const shape_size = Math.min(canvas_w, canvas_h) / 2;
+
     begin_draw();
 
-    set_canvas_fill("black");
-    clear_canvas();
+    G.curr_t += dt;
+    if(G.curr_t >= G.total_t) { 
+        G.curr_t  = 0;
+        G.total_t = random_int(4, 10);
+        
+        G.n = (G.n + 1) % 10;
+        G.d = 2;
+        G.k = (G.n / G.d);
+        
+        G.x = null;
+        G.y = null;
 
-    const canvas_w = get_canvas_width ();
-    const canvas_h = get_canvas_height(); 
-    const min_side = Math.min(canvas_w, canvas_h) / 2;
-
-    const sine = Math.sin(get_total_time());
-
-    const a = map(sine, -1, +1, min_side * 0.5, min_side * 0.9);
-    const n = map(sine, -1, +1, 1, 10);
-    const d = G.d; 
-    const k = (n / d);
-
-    const ctx = get_context();
-
-    set_canvas_fill  ("white");
-    set_canvas_stroke("white");
-    ctx.beginPath();
-
-    for(let i = 0; i < MATH_2PI * d; i += 0.001) { 
-        const theta = i;
-        const x = a * Math.cos(k * theta) * Math.cos(theta);
-        const y = a * Math.cos(k * theta) * Math.sin(theta);
-        if(i == 0) { 
-            ctx.moveTo(x, y);
-        } else { 
-            ctx.lineTo(x, y);
+        G.total_angle = (MATH_2PI * G.d);
+        if(G.k == Math.trunc(G.k)) { 
+            G.total_angle = MATH_2PI * (G.d / 2);
         }
-    }
-    // ctx.closePath();
-    ctx.stroke();
 
-    end_draw()
+        set_canvas_fill("black");
+        clear_canvas();
+   
+        console.log(G);
+    }
+
+    const t = (G.curr_t / G.total_t);
+    
+    const theta = lerp(t, 0, G.total_angle);
+    const x     = shape_size * Math.cos(G.k * theta) * Math.cos(theta);
+    const y     = shape_size * Math.cos(G.k * theta) * Math.sin(theta);
+    
+    const c = chroma.hsl(t * 360, 0.5, 0.5);
+    set_canvas_stroke(c);
+    set_canvas_line_width(1);
+    if(G.x == null) { 
+        G.x = x;
+        G.y = y;
+    } else { 
+        draw_line(G.x, G.y, x, y); 
+        G.x = x;
+        G.y = y;
+    }
 }
