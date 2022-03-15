@@ -19,6 +19,7 @@
 //------------------------------------------------------------------------------
 __SOURCES = [
     "/modules/demolib/modules/external/chroma.js",
+    "/modules/demolib/modules/external/dat.gui.js",
     "/modules/demolib/modules/external/perlin.js",
     "/modules/demolib/source/demolib.js",
 ]
@@ -71,11 +72,19 @@ function setup_common(canvas)
 
     set_main_canvas       (canvas);
     install_input_handlers(canvas);
+    
+    G.a = 100;
+    G.n = 5;
+    G.d = 3;
+    G.points_count = 100;
 
+    translate_canvas_to_center();
+    
+    const gui = new dat.GUI();
+    gui.add(G, "points_count", 100, 1000)
+    gui.add(G, "n", 1, 20)
+    gui.add(G, "d", 1, 20)
 
-    //
-    // Init :)
-    //
 
     start_draw_loop(update_demo);
 }
@@ -83,11 +92,40 @@ function setup_common(canvas)
 //------------------------------------------------------------------------------
 function update_demo(dt)
 {
-
     begin_draw();
 
     set_canvas_fill("black");
     clear_canvas();
+
+    const canvas_w = get_canvas_width ();
+    const canvas_h = get_canvas_height(); 
+    const min_side = Math.min(canvas_w, canvas_h) / 2;
+
+    const sine = Math.sin(get_total_time());
+
+    const a = map(sine, -1, +1, min_side * 0.5, min_side * 0.9);
+    const n = map(sine, -1, +1, 1, 10);
+    const d = G.d; 
+    const k = (n / d);
+
+    const ctx = get_context();
+
+    set_canvas_fill  ("white");
+    set_canvas_stroke("white");
+    ctx.beginPath();
+
+    for(let i = 0; i < MATH_2PI * d; i += 0.001) { 
+        const theta = i;
+        const x = a * Math.cos(k * theta) * Math.cos(theta);
+        const y = a * Math.cos(k * theta) * Math.sin(theta);
+        if(i == 0) { 
+            ctx.moveTo(x, y);
+        } else { 
+            ctx.lineTo(x, y);
+        }
+    }
+    // ctx.closePath();
+    ctx.stroke();
 
     end_draw()
 }
