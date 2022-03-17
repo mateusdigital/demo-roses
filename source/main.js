@@ -13,7 +13,11 @@
 //  Copyright : stdmatt - 2022                                                //
 //                                                                            //
 //  Description :                                                             //
-//                                                                            //
+//    http://xahlee.info/SpecialPlaneCurves_dir/Rose_dir/rose.html            //
+//
+    // https://encyclopediaofmath.org/wiki/Roses_(curves)
+    // http://xahlee.info/SpecialPlaneCurves_dir/Rose_dir/rose.html
+    // https://en.wikipedia.org/wiki/Rose_%28mathematics%29
 //---------------------------------------------------------------------------~//
 
 //------------------------------------------------------------------------------
@@ -57,12 +61,19 @@ function setup_demo_mode()
 
 
             //
-            // Create Stats
+            // reate Stats
             //
 
             G.stats = new Stats();
             G.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
             document.body.appendChild(G.stats.dom);
+
+
+            //
+            // dat.gui
+            //
+
+            G.gui = new dat.GUI();
 
             resolve(canvas);
         });
@@ -107,26 +118,54 @@ function setup_common(canvas)
         Tween.Easing.Bounce .InOut,
     ];
 
-    C.ROSE_DURATION = make_min_max(2, 2);
-    C.TARGET_VALUE  = make_min_max( 1,  8);
-    C.ANGLE_INCR    = 0.001;
+    C.ROSE_DURATION = make_min_max(10, 10);
+    C.ROSE_A        = make_min_max(0, 8)
+    C.ROSE_S        = make_min_max(0, +5);
 
     //
     // Globals
     //
 
-    G.n           = 3;
-    G.d           = 2;
+    G.shape_size   = calculate_max_shape_size();
+    G.thickness    = 1;
+    G.num_points   = 1000;
+
+    G.curr_a  = C.ROSE_A.random_int();
+    G.next_a  = C.ROSE_A.random_int();
+    G.ratio_a = 0;
+
+    G.curr_s  = C.ROSE_S.random_int();
+    G.next_s  = C.ROSE_S.random_int();
+    G.ratio_s = 0;
+
     G.curr_color  = get_random_color();
-    G.clear_color = chroma("black");
+    G.next_color  = get_random_color();
+    G.ratio_color = 0;
 
-    G.effects = [
-        create_random_rose,
-    ]
+    G.clear_color  = chroma("black");
 
-    create_random_rose();
+    G.anim_time     = 0;
+    G.anim_time_max = C.ROSE_DURATION.random_int();
+
+    //
+    // Create the gui
+    //
+
+    G.gui.add(G, "curr_a",  C.ROSE_A.min, C.ROSE_A.max, 0.01);
+    G.gui.add(G, "next_a",  C.ROSE_A.min, C.ROSE_A.max, 0.01);
+    G.gui.add(G, "ratio_a", 0, 1, 0.01);
+
+    G.gui.add(G, "curr_s",  C.ROSE_S.min, C.ROSE_S.max, 0.01);
+    G.gui.add(G, "next_s",  C.ROSE_S.min, C.ROSE_S.max, 0.01);
+    G.gui.add(G, "ratio_s", 0, 1, 0.01);
+
+    G.gui.add(G, "thickness",     1,   10, 1.00);
+    G.gui.add(G, "ratio_color",   0,   1,  0.01);
+    G.gui.add(G, "num_points",  100, 1000, 1.00);
+
     start_draw_loop(update_demo);
 }
+
 
 //------------------------------------------------------------------------------
 function update_demo(dt)
@@ -135,17 +174,19 @@ function update_demo(dt)
         G.stats.begin();
     }
 
-    const ratio = G.tween.get_ratio();
-    const alpha = map(ratio, 0, 1, 0.01, 0.8);
-    clear_canvas(G.clear_color.alpha(1));
+    clear_canvas(G.clear_color);
 
-    G.tween.update(dt);
-    get_context().rotate(dt / 10);
+    const a = lerp(G.ratio_a, G.curr_a, G.next_a);
+    const s = lerp(G.ratio_s, G.curr_s, G.next_s);
+    const c = G.ratio_color;
+
+    draw_rose(a, s, c, G.thickness);
 
     if(G.stats) {
         G.stats.end();
     }
 }
+
 
 //------------------------------------------------------------------------------
 function get_random_color()
@@ -155,69 +196,41 @@ function get_random_color()
 }
 
 //------------------------------------------------------------------------------
-function create_random_rose()
+function calculate_max_shape_size()
 {
-    const duration       = C.ROSE_DURATION.random_float();
-    const is_animating_n = random_bool();
-
-    const value_start  = (is_animating_n) ? G.n : G.d;
-    const value_target = C.TARGET_VALUE.random_int();
-
     const canvas_w   = get_canvas_width ();
     const canvas_h   = get_canvas_height();
-    const shape_size = (Math.min(canvas_w, canvas_h) * 0.8 / 2);
 
-    const next_color = get_random_color();
-    const easing     = random_element(C.EASINGS);
-
-    // echo(value_start, value_target, is_animating_n, G.n, G.d);
-
-    const ctx = get_context();
-    G.tween = Tween.create(duration)
-        .from({v: value_start })
-        .to  ({v: value_target})
-        .easing(easing)
-        .on_complete(()=> {
-            G.curr_color = next_color;
-
-            if(is_animating_n) {
-                G.n = value_target;
-            } else {
-                G.d = value_target;
-            }
-
-            const next_effect = random_element(G.effects);
-            next_effect();
-        })
-        .on_update((dt, v)=> {
-            const n = (is_animating_n) ? v.v : G.n;
-            const d = (is_animating_n) ? G.d : v.v;
-            const k = (n / d);
-
-            const max_angle = (MATH_2PI / k) * Math.max(n, d);
-
-            const color     = chroma.mix(G.curr_color, next_color, G.tween.get_ratio());
-            const thickness = map(Math.sin(G.tween.get_ratio() * MATH_2PI), -1, +1, 2, 10);
-            echo(n, d, k, max_angle / MATH_2PI);
-            begin_draw();
-
-            ctx.beginPath();
-            for(let theta = 0; theta < max_angle; theta += C.ANGLE_INCR) {
-                const x = shape_size * Math.cos(k * theta) * Math.cos(theta);
-                const y = shape_size * Math.cos(k * theta) * Math.sin(theta);
-
-                if(theta == 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-            }
-
-            set_canvas_stroke    (color);
-            set_canvas_line_width(thickness);
-
-            ctx.stroke();
-            end_draw();
-        })
-        .start();
+    return (Math.min(canvas_w, canvas_h) * 0.8 / 2);
 }
+
+//------------------------------------------------------------------------------
+function draw_rose(a, s, color_ratio, thickness)
+{
+    const ctx = get_context();
+
+    begin_draw();
+    ctx.beginPath();
+
+    for(let i = 0; i < G.num_points; ++i) {
+        const t = i * (MATH_2PI * s / G.num_points);
+
+        const x = (Math.sin(a * t) * Math.cos(t)) * G.shape_size;
+        const y = (Math.sin(a * t) * Math.sin(t)) * G.shape_size;
+
+        if(i == 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    }
+
+    const color = chroma.mix(G.curr_color, G.next_color, color_ratio);
+
+    set_canvas_stroke    (color);
+    set_canvas_line_width(thickness);
+
+    ctx.stroke();
+    end_draw();
+}
+
