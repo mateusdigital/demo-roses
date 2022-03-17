@@ -120,7 +120,7 @@ function setup_common(canvas)
 
     C.ROSE_DURATION = make_min_max(10, 10);
     C.ROSE_A        = make_min_max(0, 8)
-    C.ROSE_S        = make_min_max(0, +5);
+    C.ROSE_S        = make_min_max(-10, +10);
 
     //
     // Globals
@@ -131,11 +131,11 @@ function setup_common(canvas)
     G.num_points   = 1000;
 
     G.curr_a  = C.ROSE_A.random_int();
-    G.next_a  = C.ROSE_A.random_int();
+    G.next_a  = C.ROSE_A.random_int_without(G.curr_a);
     G.ratio_a = 0;
 
     G.curr_s  = C.ROSE_S.random_int();
-    G.next_s  = C.ROSE_S.random_int();
+    G.next_s  = C.ROSE_S.random_int_without(G.curr_s);
     G.ratio_s = 0;
 
     G.curr_color  = get_random_color();
@@ -144,6 +144,7 @@ function setup_common(canvas)
 
     G.clear_color  = chroma("black");
 
+    G.auto_anim     = false;
     G.anim_time     = 0;
     G.anim_time_max = C.ROSE_DURATION.random_int();
 
@@ -151,17 +152,21 @@ function setup_common(canvas)
     // Create the gui
     //
 
-    G.gui.add(G, "curr_a",  C.ROSE_A.min, C.ROSE_A.max, 0.01);
-    G.gui.add(G, "next_a",  C.ROSE_A.min, C.ROSE_A.max, 0.01);
-    G.gui.add(G, "ratio_a", 0, 1, 0.01);
+    G.gui.add(G, "curr_a",  C.ROSE_A.min, C.ROSE_A.max, 0.01).listen();
+    G.gui.add(G, "next_a",  C.ROSE_A.min, C.ROSE_A.max, 0.01).listen();
+    G.gui.add(G, "ratio_a", 0, 1, 0.01).listen();
 
-    G.gui.add(G, "curr_s",  C.ROSE_S.min, C.ROSE_S.max, 0.01);
-    G.gui.add(G, "next_s",  C.ROSE_S.min, C.ROSE_S.max, 0.01);
-    G.gui.add(G, "ratio_s", 0, 1, 0.01);
+    G.gui.add(G, "curr_s",  C.ROSE_S.min, C.ROSE_S.max, 0.01).listen();
+    G.gui.add(G, "next_s",  C.ROSE_S.min, C.ROSE_S.max, 0.01).listen();
+    G.gui.add(G, "ratio_s", 0, 1, 0.01).listen();
 
     G.gui.add(G, "thickness",     1,   10, 1.00);
     G.gui.add(G, "ratio_color",   0,   1,  0.01);
     G.gui.add(G, "num_points",  100, 1000, 1.00);
+
+    G.gui.add(G, "anim_time",      0, G.anim_time_max, 0.01).listen();
+    G.gui.add(G, "anim_time_max",  1, 10, 1.00).listen();
+    G.gui.add(G, "auto_anim");
 
     start_draw_loop(update_demo);
 }
@@ -175,6 +180,36 @@ function update_demo(dt)
     }
 
     clear_canvas(G.clear_color);
+    if(G.auto_anim) {
+        G.anim_time += dt;
+        if(G.anim_time > G.anim_time_max) {
+            echo("times_up");
+            G.anim_time       = 0;
+            G.anim_time_total = C.ROSE_DURATION.random_int();
+
+            G.curr_a = G.next_a;
+            G.curr_s = G.next_s;
+
+            while(true) {
+                const v = random_float(-2, +1);
+                const n = (G.curr_a + v);
+
+                if(C.ROSE_A.in_range(n)) {
+                    G.next_a = n;
+                    break;
+                }
+            }
+
+            if(G.next_a < 1) {
+                G.next_s = (G.curr_s == 0) ? random_signed(G.ROSE_S.max) : 0;
+            } else {
+                G.next_s = (G.curr_s == 0) ? C.ROSE_S.random_int_without(G.curr_s) : 0;
+            }
+        }
+    }
+
+    G.ratio_a = (G.anim_time / G.anim_time_max);
+    G.ratio_s = (G.anim_time / G.anim_time_max);
 
     const a = lerp(G.ratio_a, G.curr_a, G.next_a);
     const s = lerp(G.ratio_s, G.curr_s, G.next_s);
