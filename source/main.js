@@ -27,7 +27,6 @@ __SOURCES = [
     "/modules/demolib/modules/external/perlin.js",
     "/modules/demolib/modules/external/Stats.js",
 
-    "/modules/demolib/source/tween.js",
     "/modules/demolib/source/demolib.js",
 ];
 
@@ -111,12 +110,12 @@ function setup_common(canvas)
     //
     // Constants
     //
-    C.ALL_EASINGS = Tween.get_all_easings();
+    C.ALL_EASINGS = get_all_easings();
 
     C.EASINGS = [
-        Tween.Easing.Elastic.InOut,
-        Tween.Easing.Back   .InOut,
-        Tween.Easing.Bounce .InOut,
+        easing_exponential_in_out,
+        easing_circular_in_out,
+        easing_elastic_in_out
     ];
 
     C.ROSE_DURATION = make_min_max( 10,  25);
@@ -148,9 +147,9 @@ function setup_common(canvas)
     G.anim_time     = Infinity; // @notice: Needs to trigger reset at 1st frame.
     G.anim_time_max = C.ROSE_DURATION.random_int();
 
-    G.easing = null;
+    G.easing          = get_random_easing();
+    G.selected_easing = null;
 
-    G.index = 0;
     reset_rose(true);
 
     //
@@ -172,10 +171,22 @@ function setup_common(canvas)
     G.gui.add(G, "anim_time_max",  1, 10, 1.00).listen();
     G.gui.add(G, "auto_anim");
 
-    G.gui.add(G, "index", C.ALL_EASINGS); //.map((v)=>{ debugger; return v.name; }));
+    G.gui.add(G, "selected_easing", ["NOT_USED", ...C.ALL_EASINGS]).onChange((v)=> {
+        if(v == "NOT_USED") {
+            G.easing = get_random_easing();
+            return;
+        }
+
+        for(let i = 0; i < C.ALL_EASINGS.length; ++i) {
+            if(C.ALL_EASINGS[i].toString() == v) {
+                G.easing = C.ALL_EASINGS[i];
+                return;
+            }
+        }
+    });
+
     start_draw_loop(update_demo);
 }
-
 
 //------------------------------------------------------------------------------
 function update_demo(dt)
@@ -264,6 +275,12 @@ function get_random_gradient()
 }
 
 //------------------------------------------------------------------------------
+function get_random_easing()
+{
+    random_element(C.EASINGS);
+}
+
+//------------------------------------------------------------------------------
 function calculate_max_shape_size()
 {
     const canvas_w  = get_canvas_width ();
@@ -285,7 +302,7 @@ function reset_rose(first_time)
 
     G.curr_a = G.next_a;
     G.curr_s = G.next_s;
-    G.easing = random_element(C.EASINGS);
+    G.easing = get_random_easing();
 
     // Get a random float biased to the minus
     // so the 'a' keeps going closer to 0
@@ -326,10 +343,5 @@ function reset_rose(first_time)
             G.next_s = 0;
         }
     }
-}
-
-//------------------------------------------------------------------------------
-function draw_rose(a, s)
-{
 }
 
