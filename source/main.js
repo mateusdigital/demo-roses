@@ -118,9 +118,11 @@ function setup_common(canvas)
         Tween.Easing.Bounce .InOut,
     ];
 
-    C.ROSE_DURATION = make_min_max(10, 10);
-    C.ROSE_A        = make_min_max(0, 8)
+    C.ROSE_DURATION = make_min_max( 10,  25);
+    C.ROSE_A        = make_min_max(  0,   8);
     C.ROSE_S        = make_min_max(-10, +10);
+
+    C.COLOR_STOPS   = make_min_max(3, 6);
 
     //
     // Globals
@@ -130,23 +132,22 @@ function setup_common(canvas)
     G.thickness    = 1;
     G.num_points   = 1000;
 
-    G.curr_a  = C.ROSE_A.random_int();
-    G.next_a  = C.ROSE_A.random_int_without(G.curr_a);
+    G.curr_a  = 0
+    G.next_a  = 0
     G.ratio_a = 0;
 
-    G.curr_s  = C.ROSE_S.random_int();
-    G.next_s  = C.ROSE_S.random_int_without(G.curr_s);
+    G.curr_s  = 0
+    G.next_s  = 0
     G.ratio_s = 0;
 
-    G.curr_color  = get_random_color();
-    G.next_color  = get_random_color();
-    G.ratio_color = 0;
-
+    G.gradient     = get_random_gradient();
     G.clear_color  = chroma("black");
 
     G.auto_anim     = false;
-    G.anim_time     = 0;
+    G.anim_time     = Infinity; // @notice: Needs to trigger reset at 1st frame.
     G.anim_time_max = C.ROSE_DURATION.random_int();
+
+    reset_rose(true);
 
     //
     // Create the gui
@@ -161,7 +162,6 @@ function setup_common(canvas)
     G.gui.add(G, "ratio_s", 0, 1, 0.01).listen();
 
     G.gui.add(G, "thickness",     1,   10, 1.00);
-    G.gui.add(G, "ratio_color",   0,   1,  0.01);
     G.gui.add(G, "num_points",  100, 1000, 1.00);
 
     G.gui.add(G, "anim_time",      0, G.anim_time_max, 0.01).listen();
@@ -179,32 +179,14 @@ function update_demo(dt)
         G.stats.begin();
     }
 
-    clear_canvas(G.clear_color);
+    //
+    // Update
+    //
+
     if(G.auto_anim) {
         G.anim_time += dt;
         if(G.anim_time > G.anim_time_max) {
-            echo("times_up");
-            G.anim_time       = 0;
-            G.anim_time_total = C.ROSE_DURATION.random_int();
-
-            G.curr_a = G.next_a;
-            G.curr_s = G.next_s;
-
-            while(true) {
-                const v = random_float(-2, +1);
-                const n = (G.curr_a + v);
-
-                if(C.ROSE_A.in_range(n)) {
-                    G.next_a = n;
-                    break;
-                }
-            }
-
-            if(G.next_a < 1) {
-                G.next_s = (G.curr_s == 0) ? random_signed(G.ROSE_S.max) : 0;
-            } else {
-                G.next_s = (G.curr_s == 0) ? C.ROSE_S.random_int_without(G.curr_s) : 0;
-            }
+            reset_rose();
         }
     }
 
@@ -213,41 +195,22 @@ function update_demo(dt)
 
     const a = lerp(G.ratio_a, G.curr_a, G.next_a);
     const s = lerp(G.ratio_s, G.curr_s, G.next_s);
-    const c = G.ratio_color;
 
-    draw_rose(a, s, c, G.thickness);
-
-    if(G.stats) {
-        G.stats.end();
-    }
-}
-
-
-//------------------------------------------------------------------------------
-function get_random_color()
-{
-    const hue = random_int(0, 360);
-    return chroma.hsl(hue, 1, 0.5);
-}
-
-//------------------------------------------------------------------------------
-function calculate_max_shape_size()
-{
-    const canvas_w   = get_canvas_width ();
-    const canvas_h   = get_canvas_height();
-
-    return (Math.min(canvas_w, canvas_h) * 0.8 / 2);
-}
-
-//------------------------------------------------------------------------------
-function draw_rose(a, s, color_ratio, thickness)
-{
-    const ctx = get_context();
+    //
+    // Draw
+    //
 
     begin_draw();
-    ctx.beginPath();
+    const alpha = 0.4
+    clear_canvas(G.clear_color.alpha(alpha));
 
-    for(let i = 0; i < G.num_points; ++i) {
+    const ctx = get_context();
+
+    ctx.beginPath();
+    ctx.strokeStyle = G.gradient;
+    ctx.lineWidth   = 4;
+
+    for(let i = 0; i <= G.num_points; ++i) {
         const t = i * (MATH_2PI * s / G.num_points);
 
         const x = (Math.sin(a * t) * Math.cos(t)) * G.shape_size;
@@ -260,12 +223,106 @@ function draw_rose(a, s, color_ratio, thickness)
         }
     }
 
-    const color = chroma.mix(G.curr_color, G.next_color, color_ratio);
-
-    set_canvas_stroke    (color);
-    set_canvas_line_width(thickness);
-
     ctx.stroke();
     end_draw();
+
+    if(G.stats) {
+        G.stats.end();
+    }
+}
+
+//------------------------------------------------------------------------------
+function get_random_gradient()
+{
+    const r0 = G.shape_size * 0.1 //* random_float(0.2, 0.4);
+    const r1 = G.shape_size * 1.2 //* random_float(0.4, 1.0);
+    const cs = C.COLOR_STOPS.random_int();
+
+    const c1 = chroma.hsl(random_int(360), 0.8, 0.5);
+    const c2 = chroma.hsl(random_int(360), 0.8, 0.5);
+    const template_colors = [ c1, c2 ];
+
+    const colors = chroma
+        .scale(template_colors)
+        .mode('lch')
+        .colors(cs);
+
+    const grd = get_context().createRadialGradient(0, 0, r0, 0, 0, r1);
+    for(let i = 0; i < cs; ++i) {
+        const c = colors[i];
+        const t = ((i+1) / cs);
+
+        grd.addColorStop(t, c);
+    }
+
+    return grd;
+}
+
+//------------------------------------------------------------------------------
+function calculate_max_shape_size()
+{
+    const canvas_w   = get_canvas_width ();
+    const canvas_h   = get_canvas_height();
+
+    return (Math.min(canvas_w, canvas_h) * 0.8 / 2);
+}
+
+function reset_rose(first_time)
+{
+    G.anim_time       = 0;
+    G.anim_time_total = C.ROSE_DURATION.random_int();
+
+    if(first_time) {
+        G.next_a = C.ROSE_A.random_float();
+        G.next_s = C.ROSE_S.random_float();
+    }
+
+    G.curr_a = G.next_a;
+    G.curr_s = G.next_s;
+
+    // Get a random float biased to the minus
+    // so the 'a' keeps going closer to 0
+    // which brings interesting curves.
+    //
+    // Doing this way to have more control
+    // in how the thing walks in the number line...
+    while(true) {
+        const v = random_float(-2, +1);
+        const n = (G.curr_a + v);
+
+        if(C.ROSE_A.in_range(n)) {
+            G.next_a = n;
+            break;
+        }
+    }
+
+    // From [0,1] curve assumes very interesting look & feel..
+    // But they need a very big value of 's' to make the visible
+    // otherwise the just show as a boring opened loop
+    //
+    // The G.next_s going to value->0->value is to make an
+    // yoyo animation with the 's' value.
+    if(G.next_a < 1) {
+       if(G.curr_s == 0) {
+            G.next_s   = random_signed(C.ROSE_S.max);
+            G.gradient = get_random_gradient();
+        } else {
+            G.next_s = 0;
+        }
+    }
+    // Normal rose...
+    else {
+        if(G.curr_s == 0) {
+            G.next_s   = C.ROSE_S.random_int_without(G.curr_s);
+            G.gradient = get_random_gradient();
+        } else {
+            G.next_s = 0;
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+function draw_rose(a, s)
+{
 }
 
