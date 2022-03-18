@@ -111,6 +111,7 @@ function setup_common(canvas)
     //
     // Constants
     //
+    C.ALL_EASINGS = Tween.get_all_easings();
 
     C.EASINGS = [
         Tween.Easing.Elastic.InOut,
@@ -147,6 +148,9 @@ function setup_common(canvas)
     G.anim_time     = Infinity; // @notice: Needs to trigger reset at 1st frame.
     G.anim_time_max = C.ROSE_DURATION.random_int();
 
+    G.easing = null;
+
+    G.index = 0;
     reset_rose(true);
 
     //
@@ -168,6 +172,7 @@ function setup_common(canvas)
     G.gui.add(G, "anim_time_max",  1, 10, 1.00).listen();
     G.gui.add(G, "auto_anim");
 
+    G.gui.add(G, "index", C.ALL_EASINGS); //.map((v)=>{ debugger; return v.name; }));
     start_draw_loop(update_demo);
 }
 
@@ -193,8 +198,8 @@ function update_demo(dt)
     G.ratio_a = (G.anim_time / G.anim_time_max);
     G.ratio_s = (G.anim_time / G.anim_time_max);
 
-    const a = lerp(G.ratio_a, G.curr_a, G.next_a);
-    const s = lerp(G.ratio_s, G.curr_s, G.next_s);
+    const a = lerp(G.easing(G.ratio_a), G.curr_a, G.next_a);
+    const s = lerp(G.easing(G.ratio_s), G.curr_s, G.next_s);
 
     //
     // Draw
@@ -261,12 +266,13 @@ function get_random_gradient()
 //------------------------------------------------------------------------------
 function calculate_max_shape_size()
 {
-    const canvas_w   = get_canvas_width ();
-    const canvas_h   = get_canvas_height();
+    const canvas_w  = get_canvas_width ();
+    const canvas_h  = get_canvas_height();
 
     return (Math.min(canvas_w, canvas_h) * 0.8 / 2);
 }
 
+//------------------------------------------------------------------------------
 function reset_rose(first_time)
 {
     G.anim_time       = 0;
@@ -279,6 +285,7 @@ function reset_rose(first_time)
 
     G.curr_a = G.next_a;
     G.curr_s = G.next_s;
+    G.easing = random_element(C.EASINGS);
 
     // Get a random float biased to the minus
     // so the 'a' keeps going closer to 0
