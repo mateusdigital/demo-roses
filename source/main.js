@@ -22,12 +22,17 @@
 
 //------------------------------------------------------------------------------
 __SOURCES = [
+    // demolib
     "/modules/demolib/modules/external/chroma.js",
     "/modules/demolib/modules/external/dat.gui.js",
     "/modules/demolib/modules/external/perlin.js",
     "/modules/demolib/modules/external/Stats.js",
 
     "/modules/demolib/source/demolib.js",
+
+    // Sidebar
+    "/modules/sidebar/data/css/sidebar.css",
+    "/modules/sidebar/source/sidebar.js"
 ];
 
 //------------------------------------------------------------------------------
@@ -60,19 +65,34 @@ function setup_demo_mode()
 
 
             //
-            // reate Stats
+            // Create Stats / dat.gui
             //
 
             G.stats = new Stats();
             G.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
             document.body.appendChild(G.stats.dom);
 
-
-            //
-            // dat.gui
-            //
-
             G.gui = new dat.GUI();
+
+
+            //
+            // Create Sidebar
+            //
+
+            G.sidebar = Sidebar.create();
+
+            const main = G.sidebar.add_section("Roses");
+            main.add_button("Restart").on_click(on_sidebar_demo_restart);
+            main.add_button("About"  ).on_click(on_sidebar_demo_about  );
+            main.add_button("More!"  ).on_click(on_sidebar_demo_more   );
+
+            main.add_toggle("Developer Mode").on_value_changed((t, v)=> {
+                if(v) {
+                    const l = t.classList;
+                }
+            });
+
+            document.body.appendChild(G.sidebar.dom);
 
             resolve(canvas);
         });
@@ -90,6 +110,20 @@ function demo_start(user_canvas)
         setup_common(user_canvas);
     }
 }
+
+
+
+//------------------------------------------------------------------------------
+function on_sidebar_demo_restart()
+{
+}
+function on_sidebar_demo_about()
+{
+}
+function on_sidebar_demo_more()
+{
+}
+
 
 
 //------------------------------------------------------------------------------

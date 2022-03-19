@@ -29,6 +29,11 @@ Sidebar.create = ()=> {
 };
 
 Sidebar._Section = (name)=> {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "../data/css/sidebar.css";
+    document.body.appendChild(link);
+
     // Element
 	const _dom = make_dom("ul", null, "section");
     _dom.appendChild(
@@ -85,29 +90,13 @@ Sidebar._Toggle = (name, toggled)=> {
     _dom.appendChild(label);
 
     // Functions
-	const _on_click = (func)=> {
-        _dom.onclick = func;
+	const _on_value_changed = (func)=> {
 	}
 
     // Object
 	return {
-		dom:      _dom,
-		on_click: _on_click,
+		dom:              _dom,
+		on_value_changed: _on_value_changed,
     }
 }
 
-const sidebar = Sidebar.create();
-
-const main = sidebar.add_section("Roses");
-main.add_button("Restart").on_click(()=>{
-
-})
-main.add_button("Share!").on_click(()=> {
-
-});
-main.add_button("More!").on_click(()=>{
-
-});
-
-main.add_toggle("OLA!");
-document.body.appendChild(sidebar.dom);
