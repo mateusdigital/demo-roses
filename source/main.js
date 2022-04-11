@@ -35,6 +35,8 @@ __SOURCES = [
     "/modules/sidebar/source/sidebar.js"
 ];
 
+__DEMO_NAME = "roses";
+
 //------------------------------------------------------------------------------
 const C = {}; // Constants
 const G = {}; // Globals
@@ -47,21 +49,24 @@ const G = {}; // Globals
 function setup_demo_mode() {
     return new Promise((resolve, reject) => {
         demolib_load_all_scripts(__SOURCES).then(() => {
+
             //
             // Create Canvas
             //
 
-            canvas = document.createElement("canvas");
+            G.canvas_container = document.getElementById("canvas_container");
+            G.canvas_container.classList.add("sidebar_push");
 
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            canvas.style.position = "fixed";
-            canvas.style.left = "0px";
-            canvas.style.top = "0px";
-            canvas.style.zIndex = "-100";
+            G.canvas = document.createElement("canvas");
+            G.canvas.width  = window.innerWidth;
+            G.canvas.height = window.innerHeight;
 
-            document.body.appendChild(canvas);
+            G.canvas.style.position = "fixed";
+            G.canvas.style.left     = "0px";
+            G.canvas.style.top      = "0px";
+            G.canvas.style.zIndex   = "-100";
 
+            G.canvas_container.appendChild(G.canvas);
 
             //
             // Create Stats / dat.gui
@@ -73,7 +78,6 @@ function setup_demo_mode() {
 
             G.gui = new dat.GUI();
 
-            set_style_hidden(G.stats.dom, G.gui.domElement);
 
             //
             // Create Sidebar
@@ -82,19 +86,53 @@ function setup_demo_mode() {
             G.sidebar = Sidebar.create();
 
             const roses = G.sidebar.add_section("Roses");
-            roses.add_button("Restart", Sidebar.Icons.Restart()).on_click(on_sidebar_demo_restart);
+            roses.add_button("Restart", Sidebar.Icons.Restart()).on_click(()=>{
+                demo_restart();
+            });
 
             const main = G.sidebar.add_section("");
-            main.add_toggle("Developer Mode", Sidebar.Icons.IDDQD()).on_value_changed(on_sidebar_developer_mode_changed);
+            main.add_toggle("Developer Mode", Sidebar.Icons.IDDQD()).on_value_changed(()=>{
+                if(toggled) {
+                    set_style_visible(G.stats.dom, G.gui.domElement);
+                } else {
+                    set_style_hidden(G.stats.dom, G.gui.domElement);
+                }
+            });
 
             const more = G.sidebar.add_section("More");
-            more.add_button("About", Sidebar.Icons.About()).on_click(on_sidebar_demo_about);
-            more.add_button("More", Sidebar.Icons.More()).on_click(on_sidebar_demo_more);
+            more.add_button("About", Sidebar.Icons.About()).on_click(()=>{
+                var url = str_cat("https://stdmatt.com/demos/", __DEMO_NAME, ".html");
+                window.open(url, '_blank');
+            });
+            more.add_button("More",  Sidebar.Icons.More ()).on_click(()=>{
+                var url = "https://stdmatt.com/demos.html";
+                window.open(url, '_blank');
+            });
 
             document.body.appendChild(G.sidebar.dom);
 
+            //
+            // Hamburger
+            //
 
-            resolve(canvas);
+            const hamburger = G.sidebar.create_hamburger(
+                "\u2630 menu",
+                "\u2716 close",
+                ()=> {
+                    const size = (G.sidebar.is_open) ? "42%" : "0px";
+                    G.sidebar.dom.style.width           = size;
+                    G.canvas_container.style.marginLeft = size;
+                }
+            );
+
+            G.canvas_container.appendChild(hamburger);
+
+            //
+            // Finish
+            //
+
+            set_style_hidden(G.stats.dom, G.gui.domElement);
+            resolve(G.canvas);
         });
     });
 }
@@ -110,40 +148,6 @@ function demo_start(user_canvas) {
     }
 }
 
-
-//
-// Sidebar callbacks
-//
-
-//------------------------------------------------------------------------------
-function on_sidebar_demo_restart()
-{
-    demo_restart();
-}
-
-//------------------------------------------------------------------------------
-function on_sidebar_demo_about()
-{
-    var url = str_cat("https://stdmatt.com/demos/", __DEMO_NAME, ".html");
-    window.open(url, '_blank');
-}
-
-//------------------------------------------------------------------------------
-function on_sidebar_demo_more()
-{
-    var url = "https://stdmatt.com/demos.html";
-    window.open(url, '_blank');
-}
-
-//------------------------------------------------------------------------------
-function on_sidebar_developer_mode_changed(element, toggled)
-{
-    if(toggled) {
-        set_style_visible(G.stats.dom, G.gui.domElement);
-    } else {
-        set_style_hidden(G.stats.dom, G.gui.domElement);
-    }
-}
 
 
 //----------------------------------------------------------------------------//
@@ -167,6 +171,7 @@ function setup_common(canvas)
     //
     // Constants
     //
+
     C.ALL_EASINGS = get_all_easings();
 
     C.EASINGS = [
@@ -184,6 +189,7 @@ function setup_common(canvas)
     //
     // Globals
     //
+    G.canvas = canvas;
 
     G.shape_size = calculate_max_shape_size();
     G.thickness  = 1;
@@ -200,7 +206,7 @@ function setup_common(canvas)
     G.gradient    = get_random_gradient();
     G.clear_color = chroma("black");
 
-    G.auto_anim     = false;
+    G.auto_anim     = true;
     G.anim_time     = Infinity; // @notice: Needs to trigger reset at 1st frame.
     G.anim_time_max = C.ROSE_DURATION.random_int();
 
@@ -246,7 +252,8 @@ function setup_common(canvas)
 }
 
 //------------------------------------------------------------------------------
-function update_demo(dt) {
+function update_demo(dt)
+{
     if (G.stats) {
         G.stats.begin();
     }
@@ -304,9 +311,10 @@ function update_demo(dt) {
 }
 
 //------------------------------------------------------------------------------
-function get_random_gradient() {
-    const r0 = G.shape_size * 0.1 //* random_float(0.2, 0.4);
-    const r1 = G.shape_size * 1.2 //* random_float(0.4, 1.0);
+function get_random_gradient()
+{
+    const r0 = G.shape_size * random_float(0.05, 0.2);
+    const r1 = G.shape_size * random_float(1.1, 1.3);
     const cs = C.COLOR_STOPS.random_int();
 
     const c1 = chroma.hsl(random_int(360), 0.8, 0.5);
@@ -343,7 +351,8 @@ function calculate_max_shape_size() {
 }
 
 //------------------------------------------------------------------------------
-function reset_rose(first_time) {
+function reset_rose(first_time)
+{
     G.anim_time       = 0;
     G.anim_time_total = C.ROSE_DURATION.random_int();
 

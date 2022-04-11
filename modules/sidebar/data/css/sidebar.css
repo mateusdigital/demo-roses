@@ -1,62 +1,106 @@
 @import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400&display=swap');
 
-/* -------------------------------------------------------------------------- */
 
+
+/*
+ * Hamburger
+*/
+
+/* -------------------------------------------------------------------------- */
+.hamburger {
+    color: white;
+
+    position: relative;
+
+    top:  0.0rem;
+    left: 1.0rem;
+
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size:   1.5rem;
+}
+
+
+
+
+/*
+ * Sidebar
+*/
+
+/* -------------------------------------------------------------------------- */
 .sidebar {
     position: fixed;
-    top: 0;
+
+    top:  0;
     left: 0;
-    width: 225px;
+
+    width:  0%;
     height: 100%;
+
     background-color: #222222;
+
+    cursor:     pointer;
+    overflow-x: hidden;
+
+    transition: 0.5s;
 }
 
+/* -------------------------------------------------------------------------- */
+.sidebar_push {
+    transition: margin-left 0.5s;
+}
 
 /* -------------------------------------------------------------------------- */
-
 .sidebar ul {
-    list-style: none;
-    text-decoration: none;
-    margin: 0;
+    margin:  0;
     padding: 0;
     box-sizing: border-box;
+
+    list-style:      none;
+    text-decoration: none;
+
     font-family: 'Source Sans Pro', sans-serif;
+    font-size: 1.2rem;
 }
 
 
 /* -------------------------------------------------------------------------- */
-
 .sidebar li {
     display: grid;
     grid-template-columns: auto auto auto;
-    padding-left: 1rem;
-    padding-right: 1rem;
-    padding-top: 0.5rem;
+
+    padding-left:   1.0rem;
+    padding-right:  1.0rem;
+    padding-top:    0.5rem;
     padding-bottom: 0.5rem;
+
     align-content: center;
-    align-items: center;
+    align-items:   center;
+
     justify-content: start;
-    justify-items: center;
+    justify-items:   center;
+
     color: white;
 }
 
 
 /* -------------------------------------------------------------------------- */
-
 .sidebar .title {
     display: block;
-    padding-top: 0.25rem;
+
+    padding-top:    0.25rem;
     padding-bottom: 0.25rem;
+
     border: none;
     background-color: #222222;
+
     font-weight: bolder;
 }
 
 
 /* -------------------------------------------------------------------------- */
-
 .sidebar .button {
     background-color: #333333;
+
     border-bottom-style: solid;
     border-bottom-width: 1px;
     border-bottom-color: #5C5C5C;
@@ -67,49 +111,57 @@
 }
 
 .sidebar .button:hover {
-    background-color: #5C5C5C;
+    background-color:    #5C5C5C;
     border-bottom-color: #666666;
 }
 
 
 /* -------------------------------------------------------------------------- */
-
 .sidebar .icon {
-    display: black;
-    width: 1.5rem;
-    height: 1.5rem;
-    padding-right: 0.25rem;
+    width:  1.3rem;
+    height: 1.3rem;
+
+    padding-right: 0.5rem;
 }
 
+/* -------------------------------------------------------------------------- */
+.sidebar span {
+    display: block;
+    padding-right: 0.25rem;
+    white-space: nowrap;
+}
 
 /* -------------------------------------------------------------------------- */
-
 .sidebar .switch {
-    display: inline-block;
+    display:  block;
     position: relative;
-    margin-left: auto;
-    margin-right: 1rem;
-    width: 3rem;
+
+    width:  3.0rem;
     height: 1.5rem;
+
+    float: right;
+    right: -2rem;
 }
 
 .sidebar .switch input {
     opacity: 0;
-    width: 0;
-    height: 0;
+    width:   0;
+    height:  0;
 }
 
 
 /* -------------------------------------------------------------------------- */
-
 .sidebar .slider {
     cursor: pointer;
+
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    top:    0;
+    left:   0;
+    right:  0;
     bottom: 0;
+
     background-color: #ccc;
+
     transition: .4s;
     -webkit-transition: .4s;
 }
@@ -142,7 +194,6 @@
 
 
 /* Rounded sliders */
-
 .sidebar .slider.round {
     border-radius: 1rem;
 }
