@@ -81,16 +81,15 @@ function setup_demo_mode()
 
             G.sidebar = Sidebar.create();
 
-            const main = G.sidebar.add_section("Roses");
-            main.add_button("Restart").on_click(on_sidebar_demo_restart);
-            main.add_button("About"  ).on_click(on_sidebar_demo_about  );
-            main.add_button("More!"  ).on_click(on_sidebar_demo_more   );
+            const roses = G.sidebar.add_section("Roses");
+            roses.add_button("Restart", Sidebar.Icons.Restart()).on_click(on_sidebar_demo_restart);
 
-            main.add_toggle("Developer Mode").on_value_changed((t, v)=> {
-                if(v) {
-                    const l = t.classList;
-                }
-            });
+            const main = G.sidebar.add_section("");
+            main.add_toggle("Developer Mode", Sidebar.Icons.IDDQD()).on_value_changed(on_sidebar_developer_mode_changed);
+
+            const more = G.sidebar.add_section("More");
+            more.add_button("About",Sidebar.Icons.About()).on_click(on_sidebar_demo_about);
+            more.add_button("More", Sidebar.Icons.More ()).on_click(on_sidebar_demo_more );
 
             document.body.appendChild(G.sidebar.dom);
 
@@ -112,18 +111,30 @@ function demo_start(user_canvas)
 }
 
 
+//
+// Sidebar callbacks
+//
 
 //------------------------------------------------------------------------------
 function on_sidebar_demo_restart()
 {
 }
+
+//------------------------------------------------------------------------------
 function on_sidebar_demo_about()
 {
 }
+
+//------------------------------------------------------------------------------
 function on_sidebar_demo_more()
 {
 }
 
+//------------------------------------------------------------------------------
+function on_sidebar_developer_mode_changed()
+{
+    G.gui.hide();
+}
 
 
 //------------------------------------------------------------------------------
@@ -378,4 +389,3 @@ function reset_rose(first_time)
         }
     }
 }
-
