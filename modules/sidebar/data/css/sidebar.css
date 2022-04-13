@@ -65,8 +65,8 @@
 
 /* -------------------------------------------------------------------------- */
 .sidebar li {
-    display: grid;
-    grid-template-columns: auto auto auto;
+    display: flex;
+    /* grid-template-columns: auto max-content auto; */
 
     padding-left:   1.0rem;
     padding-right:  1.0rem;
@@ -134,13 +134,12 @@
 /* -------------------------------------------------------------------------- */
 .sidebar .switch {
     display:  block;
-    position: relative;
+
+    position:    relative;
+    margin-left: auto;
 
     width:  3.0rem;
     height: 1.5rem;
-
-    float: right;
-    right: -2rem;
 }
 
 .sidebar .switch input {
@@ -162,19 +161,23 @@
 
     background-color: #ccc;
 
-    transition: .4s;
-    -webkit-transition: .4s;
+    transition:         0.4s;
+    -webkit-transition: 0.4s;
 }
 
 .sidebar .slider:before {
     content: "";
     position: absolute;
-    left: 2px;
+
+    left:   2px;
     bottom: 4px;
-    width: 1rem;
+
+    width:  1rem;
     height: 1rem;
-    transition: .4s;
-    -webkit-transition: .4s;
+
+    transition:         0.4s;
+    -webkit-transition: 0.4s;
+
     background-color: white;
 }
 
@@ -187,9 +190,9 @@
 }
 
 .sidebar input:checked+.slider:before {
+    transform:         translateX(26px);
     -webkit-transform: translateX(26px);
-    -ms-transform: translateX(26px);
-    transform: translateX(26px);
+    -ms-transform:     translateX(26px);
 }
 
 

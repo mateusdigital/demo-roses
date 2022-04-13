@@ -91,10 +91,12 @@ function setup_demo_mode() {
             });
 
             const main = G.sidebar.add_section("");
-            main.add_toggle("Developer Mode", Sidebar.Icons.IDDQD()).on_value_changed(()=>{
+            main.add_toggle("Developer Mode", Sidebar.Icons.Dev()).on_value_changed((element, toggled)=>{
                 if(toggled) {
+                    element.img.src = Sidebar.Icons.IDDQD();
                     set_style_visible(G.stats.dom, G.gui.domElement);
                 } else {
+                    element.img.src = Sidebar.Icons.Dev();
                     set_style_hidden(G.stats.dom, G.gui.domElement);
                 }
             });
@@ -119,7 +121,7 @@ function setup_demo_mode() {
                 "\u2630 menu",
                 "\u2716 close",
                 ()=> {
-                    const size = (G.sidebar.is_open) ? "42%" : "0px";
+                    const size = (G.sidebar.is_open) ? "300px" : "0px";
                     G.sidebar.dom.style.width           = size;
                     G.canvas_container.style.marginLeft = size;
                 }
