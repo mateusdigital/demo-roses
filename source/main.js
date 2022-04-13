@@ -221,34 +221,40 @@ function setup_common(canvas)
     // Create the gui
     //
 
-    G.gui.add(G, "curr_a", C.ROSE_A.min, C.ROSE_A.max, 0.01).listen();
-    G.gui.add(G, "next_a", C.ROSE_A.min, C.ROSE_A.max, 0.01).listen();
-    G.gui.add(G, "ratio_a", 0, 1, 0.01).listen();
+    if(G.gui) {
+        G.gui.add(G, "curr_a", C.ROSE_A.min, C.ROSE_A.max, 0.01).listen();
+        G.gui.add(G, "next_a", C.ROSE_A.min, C.ROSE_A.max, 0.01).listen();
+        G.gui.add(G, "ratio_a", 0, 1, 0.01).listen();
 
-    G.gui.add(G, "curr_s", C.ROSE_S.min, C.ROSE_S.max, 0.01).listen();
-    G.gui.add(G, "next_s", C.ROSE_S.min, C.ROSE_S.max, 0.01).listen();
-    G.gui.add(G, "ratio_s", 0, 1, 0.01).listen();
+        G.gui.add(G, "curr_s", C.ROSE_S.min, C.ROSE_S.max, 0.01).listen();
+        G.gui.add(G, "next_s", C.ROSE_S.min, C.ROSE_S.max, 0.01).listen();
+        G.gui.add(G, "ratio_s", 0, 1, 0.01).listen();
 
-    G.gui.add(G, "thickness", 1, 10, 1.00);
-    G.gui.add(G, "num_points", 100, 1000, 1.00);
+        G.gui.add(G, "thickness", 1, 10, 1.00);
+        G.gui.add(G, "num_points", 100, 1000, 1.00);
 
-    G.gui.add(G, "anim_time", 0, G.anim_time_max, 0.01).listen();
-    G.gui.add(G, "anim_time_max", 1, 10, 1.00).listen();
-    G.gui.add(G, "auto_anim");
+        G.gui.add(G, "anim_time", 0, G.anim_time_max, 0.01).listen();
+        G.gui.add(G, "anim_time_max", 1, 10, 1.00).listen();
+        G.gui.add(G, "auto_anim");
 
-    G.gui.add(G, "selected_easing", ["NOT_USED", ...C.ALL_EASINGS]).onChange((v) => {
-        if (v == "NOT_USED") {
-            G.easing = get_random_easing();
-            return;
-        }
-
-        for (let i = 0; i < C.ALL_EASINGS.length; ++i) {
-            if (C.ALL_EASINGS[i].toString() == v) {
-                G.easing = C.ALL_EASINGS[i];
+        G.gui.add(G, "selected_easing", ["NOT_USED", ...C.ALL_EASINGS]).onChange((v) => {
+            if (v == "NOT_USED") {
+                G.easing = get_random_easing();
                 return;
             }
-        }
-    });
+
+            for (let i = 0; i < C.ALL_EASINGS.length; ++i) {
+                if (C.ALL_EASINGS[i].toString() == v) {
+                    G.easing = C.ALL_EASINGS[i];
+                    return;
+                }
+            }
+        });
+    }
+
+    //
+    // Start
+    //
 
     start_draw_loop(update_demo);
 }
