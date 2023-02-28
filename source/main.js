@@ -24,133 +24,65 @@
 __SOURCES = [
     // demolib
     "/modules/demolib/modules/external/chroma.js",
-    "/modules/demolib/modules/external/dat.gui.js",
     "/modules/demolib/modules/external/perlin.js",
-    "/modules/demolib/modules/external/Stats.js",
-
     "/modules/demolib/source/demolib.js",
-
-    // Sidebar
-    "/modules/sidebar/data/css/sidebar.css",
-    "/modules/sidebar/source/sidebar.js"
 ];
 
 __DEMO_NAME = "roses";
 
-//------------------------------------------------------------------------------
-const C = {}; // Constants
-const G = {}; // Globals
-
+const C = { };
+const G = { };
 
 //----------------------------------------------------------------------------//
-// demolib boilerplate                                                        //
+// Setup / Draw                                                               //
 //----------------------------------------------------------------------------//
 //------------------------------------------------------------------------------
-function setup_demo_mode() {
-    return new Promise((resolve, reject) => {
-        demolib_load_all_scripts(__SOURCES).then(() => {
+function setup_standalone_mode()
+{
+    return new Promise((resolve, reject)=>{
+        demolib_load_all_scripts(__SOURCES).then(()=> { // Download all needed scripts.
+            // Create the standalone canvas.
+            const canvas = document.createElement("canvas");
 
-            //
-            // Create Canvas
-            //
+            canvas.width            = window.innerWidth;
+            canvas.height           = window.innerHeight;
+            canvas.style.position   = "fixed";
+            canvas.style.left       = "0px";
+            canvas.style.top        = "0px";
+            canvas.style.zIndex     = "-100";
 
-            G.canvas_container = document.getElementById("canvas_container");
-            G.canvas_container.classList.add("sidebar_push");
+            document.body.appendChild(canvas);
 
-            G.canvas = document.createElement("canvas");
-            G.canvas.width  = window.innerWidth;
-            G.canvas.height = window.innerHeight;
+            // Setup the listener for gif recording.
+            gif_setup_listeners();
 
-            G.canvas.style.position = "fixed";
-            G.canvas.style.left     = "0px";
-            G.canvas.style.top      = "0px";
-            G.canvas.style.zIndex   = "-100";
-
-            G.canvas_container.appendChild(G.canvas);
-
-            //
-            // Create Stats / dat.gui
-            //
-
-            G.stats = new Stats();
-            G.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
-            document.body.appendChild(G.stats.dom);
-
-            G.gui = new dat.GUI();
-
-
-            //
-            // Create Sidebar
-            //
-
-            G.sidebar = Sidebar.create();
-
-            const roses = G.sidebar.add_section("Roses");
-            roses.add_button("Restart", Sidebar.Icons.Restart()).on_click(()=>{
-                demo_restart();
-            });
-
-            const main = G.sidebar.add_section("");
-            main.add_toggle("Developer Mode", Sidebar.Icons.Dev()).on_value_changed((element, toggled)=>{
-                if(toggled) {
-                    element.img.src = Sidebar.Icons.IDDQD();
-                    set_style_visible(G.stats.dom, G.gui.domElement);
-                } else {
-                    element.img.src = Sidebar.Icons.Dev();
-                    set_style_hidden(G.stats.dom, G.gui.domElement);
-                }
-            });
-
-            const more = G.sidebar.add_section("More");
-            more.add_button("About", Sidebar.Icons.About()).on_click(()=>{
-                var url = str_cat("https://stdmatt.com/demos/", __DEMO_NAME, ".html");
-                window.open(url, '_blank');
-            });
-            more.add_button("More",  Sidebar.Icons.More ()).on_click(()=>{
-                var url = "https://stdmatt.com/demos.html";
-                window.open(url, '_blank');
-            });
-
-            document.body.appendChild(G.sidebar.dom);
-
-            //
-            // Hamburger
-            //
-
-            const hamburger = G.sidebar.create_hamburger(
-                "\u2630 menu",
-                "\u2716 close",
-                ()=> {
-                    const size = (G.sidebar.is_open) ? "300px" : "0px";
-                    G.sidebar.dom.style.width           = size;
-                    G.canvas_container.style.marginLeft = size;
-                }
-            );
-
-            G.canvas_container.appendChild(hamburger);
-
-            //
-            // Finish
-            //
-
-            set_style_hidden(G.stats.dom, G.gui.domElement);
-            resolve(G.canvas);
+            resolve(canvas);
         });
     });
 }
 
 //------------------------------------------------------------------------------
-function demo_start(user_canvas) {
-    if (!user_canvas) {
-        setup_demo_mode().then((_created_canvas) => {
-            setup_common(_created_canvas);
+function demo_main(user_canvas)
+{
+    if(!user_canvas) {
+        setup_standalone_mode().then((canvas)=>{
+            setup_common(canvas);
         });
     } else {
-        setup_common(user_canvas);
+        canvas = user_canvas;
+        setup_common();
     }
+
 }
 
-
+//------------------------------------------------------------------------------
+function draw(dt)
+{
+    begin_draw();
+        clear_canvas(background_color);
+        demo.on_update(dt);
+    end_draw();
+}
 
 //----------------------------------------------------------------------------//
 // Demo ;)                                                                    //
@@ -162,7 +94,6 @@ function setup_common(canvas)
     set_noise_seed (null);
 
     set_main_canvas(canvas);
-    install_input_handlers(canvas);
 
     set_canvas_line_width(1);
     set_canvas_fill("black");
@@ -218,54 +149,15 @@ function setup_common(canvas)
     reset_rose(true);
 
     //
-    // Create the gui
-    //
-
-    if(G.gui) {
-        G.gui.add(G, "curr_a", C.ROSE_A.min, C.ROSE_A.max, 0.01).listen();
-        G.gui.add(G, "next_a", C.ROSE_A.min, C.ROSE_A.max, 0.01).listen();
-        G.gui.add(G, "ratio_a", 0, 1, 0.01).listen();
-
-        G.gui.add(G, "curr_s", C.ROSE_S.min, C.ROSE_S.max, 0.01).listen();
-        G.gui.add(G, "next_s", C.ROSE_S.min, C.ROSE_S.max, 0.01).listen();
-        G.gui.add(G, "ratio_s", 0, 1, 0.01).listen();
-
-        G.gui.add(G, "thickness", 1, 10, 1.00);
-        G.gui.add(G, "num_points", 100, 1000, 1.00);
-
-        G.gui.add(G, "anim_time", 0, G.anim_time_max, 0.01).listen();
-        G.gui.add(G, "anim_time_max", 1, 10, 1.00).listen();
-        G.gui.add(G, "auto_anim");
-
-        G.gui.add(G, "selected_easing", ["NOT_USED", ...C.ALL_EASINGS]).onChange((v) => {
-            if (v == "NOT_USED") {
-                G.easing = get_random_easing();
-                return;
-            }
-
-            for (let i = 0; i < C.ALL_EASINGS.length; ++i) {
-                if (C.ALL_EASINGS[i].toString() == v) {
-                    G.easing = C.ALL_EASINGS[i];
-                    return;
-                }
-            }
-        });
-    }
-
-    //
     // Start
     //
 
-    start_draw_loop(update_demo);
+    start_draw_loop(draw);
 }
 
 //------------------------------------------------------------------------------
-function update_demo(dt)
+function draw(dt)
 {
-    if (G.stats) {
-        G.stats.begin();
-    }
-
     //
     // Update
     //
@@ -288,34 +180,30 @@ function update_demo(dt)
     //
 
     begin_draw();
-    const alpha = 0.4
-    clear_canvas(G.clear_color.alpha(alpha));
+        const alpha = 0.4
+        clear_canvas(G.clear_color.alpha(alpha));
 
-    const ctx = get_context();
+        const ctx = get_context();
 
-    ctx.beginPath();
-    ctx.strokeStyle = G.gradient;
-    ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.strokeStyle = G.gradient;
+        ctx.lineWidth = 4;
 
-    for (let i = 0; i <= G.num_points; ++i) {
-        const t = i * (MATH_2PI * s / G.num_points);
+        for (let i = 0; i <= G.num_points; ++i) {
+            const t = i * (MATH_2PI * s / G.num_points);
 
-        const x = (Math.sin(a * t) * Math.cos(t)) * G.shape_size;
-        const y = (Math.sin(a * t) * Math.sin(t)) * G.shape_size;
+            const x = (Math.sin(a * t) * Math.cos(t)) * G.shape_size;
+            const y = (Math.sin(a * t) * Math.sin(t)) * G.shape_size;
 
-        if (i == 0) {
-            ctx.moveTo(x, y);
-        } else {
-            ctx.lineTo(x, y);
+            if (i == 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
         }
-    }
 
-    ctx.stroke();
+        ctx.stroke();
     end_draw();
-
-    if (G.stats) {
-        G.stats.end();
-    }
 }
 
 //------------------------------------------------------------------------------
