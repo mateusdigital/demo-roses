@@ -25,6 +25,7 @@ __SOURCES = [
     // demolib
     "/modules/demolib/modules/external/chroma.js",
     "/modules/demolib/modules/external/perlin.js",
+    "/modules/demolib/modules/external/gif.js/gif.js",
     "/modules/demolib/source/demolib.js",
 ];
 
