@@ -20,11 +20,13 @@ find "$ROOT_DIR/docs" -iname "*.git*" -type d | xargs rm -rf;
 readonly VERSION="$(git describe --abbrev=0 --tags)";
 readonly CURR_BUILD="$(cat "${ROOT_DIR}/.buildno")";
 readonly NEXT_BUILD="$(( CURR_BUILD + 1 ))";
+readonly DATE="$(date +'%H:%M:%S %d-%m-%Y - %Z')";
 
 ## update the files.
 cat "${ROOT_DIR}/docs/index.html"         \
     | sed s/"_version_"/"${VERSION}"/g    \
     | sed s/"_build_"/"${NEXT_BUILD}"/g   \
+    | sed s/"_date_"/"${DATE}"/g          \
     > "${ROOT_DIR}/docs/index.html.tmp"   \
     && mv                                 \
         "${ROOT_DIR}/docs/index.html.tmp" \
