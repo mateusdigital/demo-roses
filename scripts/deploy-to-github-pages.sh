@@ -3,6 +3,11 @@
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)";
 readonly ROOT_DIR="$(dirname "$SCRIPT_DIR")";
 
+
+git checkout publish;
+
+
+
 ## clean dir.
 rm -rf   "${ROOT_DIR}/docs/";
 mkdir -p "${ROOT_DIR}/docs/";
@@ -34,3 +39,7 @@ cat "${ROOT_DIR}/docs/index.html"         \
     ;
 
 echo "${NEXT_BUILD}" > "${ROOT_DIR}/.buildno";
+
+
+git add docs/;
+git commit -m "$0 - build: $NEXT_BUILD - $DATE";
